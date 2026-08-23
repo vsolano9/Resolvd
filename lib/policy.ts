@@ -92,6 +92,12 @@ export function decide(
 
     case "refund": {
       const amount = triage.refundAmount ?? null;
+      if (amount != null && (!Number.isFinite(amount) || amount <= 0)) {
+        return escalated(
+          "Confirm a valid refund amount, then approve",
+          "refund amount must be finite and greater than zero",
+        );
+      }
       if (amount == null) {
         return escalated(
           "Confirm refund amount, then approve",

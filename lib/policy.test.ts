@@ -34,6 +34,14 @@ describe("decide", () => {
     expect(d.status).toBe("resolved");
     expect(d.execution).toEqual({ kind: "refund", amount: 20 });
     expect(d.actionTaken).toBeNull();
+
+    const atLimit = decide(
+      { ...base, category: "refund", refundAmount: 50 },
+      { ...payload, orderId: "1042" },
+      ON,
+    );
+    expect(atLimit.status).toBe("resolved");
+    expect(atLimit.execution).toEqual({ kind: "refund", amount: 50 });
   });
 
   it("escalates a refund over the limit with an approval proposal", () => {
@@ -52,6 +60,30 @@ describe("decide", () => {
     const d = decide({ ...base, category: "refund" }, payload, ON);
     expect(d.status).toBe("escalated");
     expect(d.proposedAction).toMatch(/amount/i);
+  });
+
+  it("escalates non-positive and non-finite refund amounts", () => {
+    for (const refundAmount of [
+      0,
+      -1,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      Number.NEGATIVE_INFINITY,
+    ]) {
+      const d = decide(
+        { ...base, category: "refund", refundAmount },
+        payload,
+        ON,
+      );
+      expect(d.status).toBe("escalated");
+      expect(d.execution).toBeNull();
+      expect(d.proposedAction).toBe(
+        "Confirm a valid refund amount, then approve",
+      );
+      expect(d.reason).toBe(
+        "refund amount must be finite and greater than zero",
+      );
+    }
   });
 
   it("honors a custom REFUND_AUTO_LIMIT", () => {
