@@ -70,7 +70,16 @@ export async function findOrderForRefund(
   | { ok: false; proposedAction: string; reason: string }
 > {
   if (orderRef) {
-    const order = await shop.lookupByName(orderRef);
+    let order: ShopOrder | null;
+    try {
+      order = await shop.lookupByName(orderRef);
+    } catch (e) {
+      return {
+        ok: false,
+        proposedAction: "Confirm the order, then approve the refund",
+        reason: `order lookup failed: ${(e as Error).message}`,
+      };
+    }
     if (!order) {
       return {
         ok: false,
