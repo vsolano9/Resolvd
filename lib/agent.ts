@@ -53,7 +53,7 @@ async function triageWithClaude(
     urgency: parsed.urgency ?? "normal",
     sentiment: parsed.sentiment ?? "neutral",
     refundAmount:
-      typeof parsed.refundAmount === "number" ? parsed.refundAmount : undefined,
+      Number.isFinite(parsed.refundAmount) ? parsed.refundAmount : undefined,
     summary: parsed.summary ?? "",
     draftReply: parsed.draftReply ?? "",
   };

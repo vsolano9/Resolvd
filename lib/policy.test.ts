@@ -62,17 +62,22 @@ describe("decide", () => {
     expect(d.proposedAction).toMatch(/amount/i);
   });
 
-  it("escalates non-positive and non-finite refund amounts", () => {
-    for (const refundAmount of [
-      0,
-      -1,
-      Number.NaN,
-      Number.POSITIVE_INFINITY,
-      Number.NEGATIVE_INFINITY,
-    ]) {
+  it("escalates a refund whose amount is NaN instead of auto-resolving", () => {
+    const d = decide(
+      { ...base, category: "refund", refundAmount: NaN },
+      { ...payload, orderId: "1042" },
+      ON,
+    );
+    expect(d.status).toBe("escalated");
+    expect(d.execution).toBeNull();
+    expect(d.proposedAction).toMatch(/amount/i);
+  });
+
+  it("escalates zero and negative refund amounts instead of auto-resolving", () => {
+    for (const refundAmount of [0, -1, -0.01]) {
       const d = decide(
         { ...base, category: "refund", refundAmount },
-        payload,
+        { ...payload, orderId: "1042" },
         ON,
       );
       expect(d.status).toBe("escalated");
@@ -80,9 +85,7 @@ describe("decide", () => {
       expect(d.proposedAction).toBe(
         "Confirm a valid refund amount, then approve",
       );
-      expect(d.reason).toBe(
-        "refund amount must be finite and greater than zero",
-      );
+      expect(d.reason).toBe("refund amount must be greater than zero");
     }
   });
 

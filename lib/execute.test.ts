@@ -66,6 +66,20 @@ describe("findOrderForRefund", () => {
     expect(found.ok).toBe(false);
   });
 
+  it("escalates when the explicit reference lookup fails", async () => {
+    const found = await findOrderForRefund(
+      shop({
+        lookupByName: async () => {
+          throw new Error("shop unavailable");
+        },
+      }),
+      "#1042",
+      "sam@buyer.com",
+    );
+    expect(found.ok).toBe(false);
+    if (!found.ok) expect(found.reason).toMatch(/order lookup failed: shop unavailable/);
+  });
+
   it("uses a lone email match, refuses ambiguity", async () => {
     const lone = await findOrderForRefund(
       shop({ lookupByEmail: async () => [order] }),
